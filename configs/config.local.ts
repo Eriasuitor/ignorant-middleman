@@ -1,6 +1,8 @@
-import { Config } from ".";
+import { Config } from '.'
 
-export default {
-	port: 10086,
-	logger: { level: 'debug' }
-} as Config
+const config: Config = {
+  port: 10086,
+  logger: { level: 'debug' }
+}
+
+export default config
