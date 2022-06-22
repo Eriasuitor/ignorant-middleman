@@ -22,22 +22,37 @@ export function RequestMapping (method: Method, uri: string): MethodDecorator {
     }
     const controller = dependencyInversion.get(Class)
     logger.debug('Uri registered', { method, uri })
-    app[method](uri, controller[propertyKey])
+    app[method](uri, (req, res, next) => {
+      void (async () => {
+        logger.debug('New Request', { uri, method, body: req.body })
+        try {
+          await controller[propertyKey](req, res)
+        } catch (error) {
+          if (error instanceof Error) {
+            logger.error('Handle failed', { uri, method, body: req.body, message: error.message, stack: error.stack })
+          }
+          next(error)
+        }
+      })()
+    })
   }
 }
 
-function importAllFiles (location: string): void {
+async function importAllFiles (location: string): Promise<void> {
   const files = fs.readdirSync(location)
-  files.forEach(file => {
+  for (const file of files) {
     const fullPath = path.join(location, file)
     if (file.endsWith('.ts') || file.endsWith('.js')) {
-      import(fullPath)
+      await import(fullPath)
     } else if (fs.statSync(fullPath).isDirectory()) {
-      importAllFiles(fullPath)
+      await importAllFiles(fullPath)
     }
-  })
+  }
 }
 
-importAllFiles(__dirname)
+async function getApp (): Promise<express.Express> {
+  await importAllFiles(__dirname)
+  return app
+}
 
-export default app
+export default getApp

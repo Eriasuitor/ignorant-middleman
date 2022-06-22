@@ -29,7 +29,9 @@
 				"dot",
 				"--colors",
 				"--recursive",
-                "${workspaceFolder}/test/**/*.ts"
+				"--timeout", "0",
+                "${workspaceFolder}/test/**/*.ts",
+				// "-g", "Shopify",
 			  ],
 		}
 	]

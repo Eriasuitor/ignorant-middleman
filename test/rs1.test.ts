@@ -1,10 +1,14 @@
 import supertest from 'supertest'
 import { assert } from 'chai'
-import app from '../src/app'
+import getApp from '../src/app'
 
-const request = supertest(app)
+let request: supertest.SuperTest<supertest.Test>
 
 describe('rs1', () => {
+  before(async function () {
+    request = supertest(await getApp())
+  })
+
   it('can be fetched', async () => {
     await request.get('/hihi')
       .expect(200)

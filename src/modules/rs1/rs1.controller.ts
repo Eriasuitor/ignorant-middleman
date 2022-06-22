@@ -1,5 +1,5 @@
 import { Request, Response } from 'express'
-import { Method, RequestMapping } from '../app'
+import { Method, RequestMapping } from '../../app'
 
 class Rs1 {
   @RequestMapping(Method.GET, '/hihi')
