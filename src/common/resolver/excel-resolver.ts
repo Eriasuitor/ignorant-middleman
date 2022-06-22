@@ -4,6 +4,7 @@ import { Readable } from 'stream'
 import assert from 'assert'
 import lodash from 'lodash'
 import path from 'path'
+import { Transformer } from '../../interfaces/transformer/transformer.interface'
 
 const excelDecoders: {[key: string]: (buffer: Buffer) => Promise<Workbook> } = {
   '.csv': async (buffer: Buffer): Promise<Workbook> => {
@@ -22,12 +23,14 @@ async function decodeExcel (filename: string, buffer: Buffer): Promise<Workbook>
   return await excelDecoders[suffix](buffer)
 }
 
-class ExcelResolver implements DataProvider {
+class ExcelResolver<T> implements DataProvider<T> {
   data: Buffer
   filename: string
-  constructor (filename: string, data: Buffer) {
+  transformer?: Transformer<T>
+  constructor (filename: string, data: Buffer, transformer?: Transformer<T>) {
     this.filename = filename
     this.data = data
+    this.transformer = transformer
   }
 
   async resolve (worksheetNo: number): Promise<Array<{[key: string]: any}>> {
@@ -49,8 +52,9 @@ class ExcelResolver implements DataProvider {
     })
   }
 
-  async getJson (): Promise<Array<{[key: string]: any}>> {
-    return await this.resolve(1)
+  async getData (): Promise<T> {
+    const data = await this.resolve(1)
+    return (this.transformer != null) ? this.transformer.transform(data) : data as unknown as T
   }
 }
 

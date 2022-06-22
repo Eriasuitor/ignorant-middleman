@@ -1,6 +1,7 @@
 import supertest from 'supertest'
-import { assert } from 'chai'
 import getApp from '../src/app'
+import fs from 'fs'
+import path from 'path'
 
 let request: supertest.SuperTest<supertest.Test>
 
@@ -8,16 +9,12 @@ describe('Shopify', () => {
   before(async function () {
     request = supertest(await getApp())
   })
-  describe('productions', () => {
-    it('can be fetched', async () => {
-      await new Promise((resolve, reject) => {
-        setTimeout(resolve, 3000)
-      })
-      await request.get('/products')
+  describe('products', () => {
+    it('can be created with a csv file', async () => {
+      const excelData = fs.readFileSync(path.join(__dirname, 'resources', 'jewelery.xlsx'))
+      await request.post('/products')
+        .attach('file', excelData, { filename: 'jewelery.xlsx' })
         .expect(200)
-        .then(res => {
-          assert.deepEqual(res.body, { a: 13 })
-        })
     })
   })
 })

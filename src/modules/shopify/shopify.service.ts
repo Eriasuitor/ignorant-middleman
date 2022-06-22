@@ -1,7 +1,42 @@
-import Shopify, { DataType } from '@shopify/shopify-api'
+import { DataType, DeleteRequestParams, GetRequestParams, PostRequestParams, PutRequestParams, RequestReturn } from '@shopify/shopify-api'
+import { RestClient } from '@shopify/shopify-api/dist/clients/rest'
 import config from '../../../configs'
+import DataProvider from '../../common/data-provider/provider.interface'
+import { ProductItem } from '../../interfaces/transformer/product-transformer.interface'
+import { sleep } from '../../utils/runner'
+import lodash from 'lodash'
+import logger from '../../logger'
 
-const client = new Shopify.Clients.Rest(config.shopify.domain, config.shopify.accessToken)
+class ClientProxy extends RestClient {
+  private async safeRun (fn: () => Promise<RequestReturn>): Promise<RequestReturn> {
+    let retryTimes = 0
+    while (retryTimes < 3) {
+      const resp = await fn()
+      if (!resp.headers.has('Retry-After')) return resp
+      await sleep(lodash.toNumber(resp.headers.get('Retry-After')))
+      retryTimes++
+    }
+    throw new Error(`Request to shopify exceeds the limit and has been retried ${retryTimes} times`)
+  }
+
+  async get (params: GetRequestParams): Promise<RequestReturn> {
+    return await this.safeRun(super.get.bind(this, params))
+  }
+
+  async post (params: PostRequestParams): Promise<RequestReturn> {
+    return await this.safeRun(super.post.bind(this, params))
+  }
+
+  async put (params: PutRequestParams): Promise<RequestReturn> {
+    return await this.safeRun(super.put.bind(this, params))
+  }
+
+  async delete (params: DeleteRequestParams): Promise<RequestReturn> {
+    return await this.safeRun(super.delete.bind(this, params))
+  }
+}
+
+const client = new ClientProxy(config.shopify.domain, config.shopify.accessToken)
 
 class ShopifyService {
   async get (): Promise<void> {
@@ -12,50 +47,22 @@ class ShopifyService {
     console.log(resp.body)
   }
 
-  // title: string | null;
-  // body_html: string | null;
-  // created_at: string | null;
-  // handle: string | null;
-  // id: number | null;
-  // images: Image[] | null | {
-  //     [key: string]: any;
-  // };
-  // options: {
-  //     [key: string]: unknown;
-  // } | {
-  //     [key: string]: unknown;
-  // }[] | null;
-  // product_type: string | null;
-  // published_at: string | null;
-  // published_scope: string | null;
-  // status: string | null;
-  // tags: string | string[] | null;
-  // template_suffix: string | null;
-  // updated_at: string | null;
-  // variants: Variant[] | null | {
-  //     [key: string]: any;
-  // };
-  // vendor: string | null;
-
-  async createNewProduct (): Promise<void> {
+  private async createProduct (product: ProductItem): Promise<RequestReturn> {
+    logger.debug('Try create product', product)
     const resp = await client.post({
       path: 'products',
       type: DataType.JSON,
-      data: {
-        product: {
-          title: 'Burton Custom Freestyle 151',
-          body_html: '\u003cstrong\u003eGood snowboard!\u003c\/strong\u003e',
-          vendor: 'Burton',
-          product_type: 'Snowboard',
-          tags: [
-            'Barnes \u0026 Noble',
-            'Big Air',
-            "John's Fav"
-          ]
-        }
-      }
+      data: { product }
     })
-    console.log(resp.body)
+    logger.debug('Product created', product)
+    return resp
+  }
+
+  async createNewProduct (dataProvider: DataProvider<ProductItem[]>): Promise<void> {
+    const products = await dataProvider.getData()
+    for (const product of products.slice(3)) {
+      await this.createProduct(product)
+    }
   }
 }
 

@@ -1,9 +1,14 @@
 import express from 'express'
 import logger from './logger'
 import path from 'path'
+import multer from 'multer'
 import fs from 'fs'
 
 const app = express()
+
+app.use(multer().single('file'))
+
+// app.use(fileUpload())
 
 export enum Method {
   GET = 'get',
@@ -38,20 +43,20 @@ export function RequestMapping (method: Method, uri: string): MethodDecorator {
   }
 }
 
-async function importAllFiles (location: string): Promise<void> {
+async function scanAllFiles (location: string): Promise<void> {
   const files = fs.readdirSync(location)
   for (const file of files) {
     const fullPath = path.join(location, file)
     if (file.endsWith('.ts') || file.endsWith('.js')) {
       await import(fullPath)
     } else if (fs.statSync(fullPath).isDirectory()) {
-      await importAllFiles(fullPath)
+      await scanAllFiles(fullPath)
     }
   }
 }
 
 async function getApp (): Promise<express.Express> {
-  await importAllFiles(__dirname)
+  await scanAllFiles(__dirname)
   return app
 }
 

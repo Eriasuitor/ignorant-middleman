@@ -1,5 +1,5 @@
-interface DataProvider {
-  getJson: () => Promise<Array<{[key: string]: any}>>
+interface DataProvider<T> {
+  getData: () => Promise<T>
 }
 
 export default DataProvider
