@@ -16,5 +16,10 @@ describe('Shopify', () => {
         .attach('file', excelData, { filename: 'jewelery.xlsx' })
         .expect(200)
     })
+
+    it('can be fetched', async () => {
+      await request.get('/products')
+        .expect(200)
+    })
   })
 })

@@ -6,12 +6,12 @@ import shopifyService from './shopify.service'
 
 class ShopifyController {
   @RequestMapping(Method.GET, '/products')
-  async get (req: Request, res: Response): Promise<void> {
-    res.json({ a: 13 })
+  async fetch (req: Request, res: Response): Promise<void> {
+    res.json(await shopifyService.fetch())
   }
 
   @RequestMapping(Method.POST, '/products')
-  async post (req: Request, res: Response): Promise<void> {
+  async create (req: Request, res: Response): Promise<void> {
     if (req.file === undefined) {
       res.status(400).send()
       return

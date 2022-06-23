@@ -1,5 +1,3 @@
-import { Transformer } from './transformer.interface'
-
 export interface ProductItem {
   title: string
   body_html: string
@@ -25,8 +23,4 @@ export interface ProductItem {
     option2?: string
     option3?: string
   }>
-}
-
-export interface ProductTransformer extends Transformer<ProductItem[]> {
-  transform: (items: any[]) => ProductItem[]
 }

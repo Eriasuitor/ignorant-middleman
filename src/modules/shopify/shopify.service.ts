@@ -1,11 +1,11 @@
 import { DataType, DeleteRequestParams, GetRequestParams, PostRequestParams, PutRequestParams, RequestReturn } from '@shopify/shopify-api'
 import { RestClient } from '@shopify/shopify-api/dist/clients/rest'
 import config from '../../../configs'
-import DataProvider from '../../common/data-provider/provider.interface'
-import { ProductItem } from '../../interfaces/transformer/product-transformer.interface'
-import { sleep } from '../../utils/runner'
+import DataProvider from '../../interfaces/data-provider.interface'
+import { concurrentRun, sleep } from '../../utils/runner'
 import lodash from 'lodash'
 import logger from '../../logger'
+import { ProductItem } from '../../interfaces/product.interface'
 
 class ClientProxy extends RestClient {
   private async safeRun (fn: () => Promise<RequestReturn>): Promise<RequestReturn> {
@@ -39,12 +39,12 @@ class ClientProxy extends RestClient {
 const client = new ClientProxy(config.shopify.domain, config.shopify.accessToken)
 
 class ShopifyService {
-  async get (): Promise<void> {
+  async fetch (): Promise<ProductItem[]> {
     const resp = await client.get({
       path: 'products',
       type: DataType.JSON
     })
-    console.log(resp.body)
+    return resp.body as ProductItem[]
   }
 
   private async createProduct (product: ProductItem): Promise<RequestReturn> {
@@ -60,9 +60,7 @@ class ShopifyService {
 
   async createNewProduct (dataProvider: DataProvider<ProductItem[]>): Promise<void> {
     const products = await dataProvider.getData()
-    for (const product of products.slice(3)) {
-      await this.createProduct(product)
-    }
+    await concurrentRun(this.createProduct.bind(this), products, { concurrency: 3 })
   }
 }
 

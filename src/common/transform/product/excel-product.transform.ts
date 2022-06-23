@@ -1,5 +1,6 @@
-import { ProductItem, ProductTransformer } from '../../../interfaces/transformer/product-transformer.interface'
 import lodash from 'lodash'
+import { ProductItem } from '../../../interfaces/product.interface'
+import { Transformer } from '../../../interfaces/transformer.interface'
 
 export interface ExcelProductItem {
   'Handle': string
@@ -35,7 +36,7 @@ export interface ExcelProductItem {
   'Variant Tax Code': string
 }
 
-export class ExcelProductTransformer implements ProductTransformer {
+export class ExcelProductTransformer implements Transformer<ExcelProductItem[], ProductItem[]> {
   transform (items: ExcelProductItem[]): ProductItem[] {
     return lodash(items)
       .groupBy(_ => _.Handle)

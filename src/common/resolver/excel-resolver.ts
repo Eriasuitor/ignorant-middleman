@@ -1,10 +1,10 @@
-import DataProvider from '../data-provider/provider.interface'
+import DataProvider from '../../interfaces/data-provider.interface'
 import ExcelJS, { Workbook } from 'exceljs'
 import { Readable } from 'stream'
 import assert from 'assert'
 import lodash from 'lodash'
 import path from 'path'
-import { Transformer } from '../../interfaces/transformer/transformer.interface'
+import { Transformer } from '../../interfaces/transformer.interface'
 
 const excelDecoders: {[key: string]: (buffer: Buffer) => Promise<Workbook> } = {
   '.csv': async (buffer: Buffer): Promise<Workbook> => {
@@ -23,17 +23,17 @@ async function decodeExcel (filename: string, buffer: Buffer): Promise<Workbook>
   return await excelDecoders[suffix](buffer)
 }
 
-class ExcelResolver<T> implements DataProvider<T> {
+class ExcelResolver<T, R> implements DataProvider<R> {
   data: Buffer
   filename: string
-  transformer?: Transformer<T>
-  constructor (filename: string, data: Buffer, transformer?: Transformer<T>) {
+  transformer?: Transformer<T[], R>
+  constructor (filename: string, data: Buffer, transformer?: Transformer<T[], R>) {
     this.filename = filename
     this.data = data
     this.transformer = transformer
   }
 
-  async resolve (worksheetNo: number): Promise<Array<{[key: string]: any}>> {
+  async resolve (worksheetNo: number): Promise<T[]> {
     const workbook = await decodeExcel(this.filename, this.data)
     assert(worksheetNo <= workbook.worksheets.length, `Index of worksheet out of range: ${worksheetNo}, max is ${workbook.worksheets.length}`)
     const worksheet = workbook.getWorksheet(worksheetNo)
@@ -49,12 +49,12 @@ class ExcelResolver<T> implements DataProvider<T> {
           return result
         }, {}
       )
-    })
+    }) as T[]
   }
 
-  async getData (): Promise<T> {
+  async getData (): Promise<R> {
     const data = await this.resolve(1)
-    return (this.transformer != null) ? this.transformer.transform(data) : data as unknown as T
+    return (this.transformer != null) ? this.transformer.transform(data) : data as unknown as R
   }
 }
 
