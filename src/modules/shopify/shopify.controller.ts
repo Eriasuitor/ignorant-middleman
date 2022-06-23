@@ -18,7 +18,7 @@ class ShopifyController {
     }
     const dataProvider = new ExcelResolver(req.file.originalname, req.file.buffer, new ExcelProductTransformer())
     await shopifyService.createNewProduct(dataProvider)
-    res.status(200).send()
+    res.status(201).send()
   }
 }
 
