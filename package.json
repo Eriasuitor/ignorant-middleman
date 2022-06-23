@@ -4,7 +4,6 @@
   "description": "Emotionless code machine",
   "main": "index.js",
   "scripts": {
-    "test": "mocha",
     "lint": "eslint . --ext .ts",
     "fix": "eslint --fix . --ext *.ts",
     "build": "tsc"
